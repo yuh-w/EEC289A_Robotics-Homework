@@ -64,7 +64,7 @@
   },
   "stage_2": {
     "name": "stage_2",
-    "num_timesteps": 5000000,
+    "num_timesteps": 15000000,
     "command_range": {
       "min": [
         0.0,
@@ -97,17 +97,17 @@
       },
       "command_keep_prob": [
         1.0,
-        0.35,
-        0.35
+        0.5,
+        0.5
       ]
     },
     "reward_scales": {
-      "action_rate": -0.03,
-      "energy": -0.002
+      "action_rate": -0.015,
+      "energy": -0.001
     },
     "restore_previous_stage_checkpoint": true
   },
-  "demo_rollout": {
+    "demo_rollout": {
     "segment_seconds": 5.0, 
     "segments": [
       [0.8, 0.0, 0.0],  
@@ -188,5 +188,23 @@
       "Explain why your changes may or may not help sim-to-real transfer.",
       "Describe at least one failed idea and what you learned from it."
     ]
+  },
+  "runtime_overrides": {
+    "num_envs": 1024,
+    "num_eval_envs": 128,
+    "num_evals": 5,
+    "batch_size": 256,
+    "policy_hidden_layer_sizes": [
+      256,
+      256,
+      128
+    ],
+    "value_hidden_layer_sizes": [
+      256,
+      256,
+      128
+    ],
+    "stage_1_num_timesteps": 10000000,
+    "stage_2_num_timesteps": 30000000
   }
 }
