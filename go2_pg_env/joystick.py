@@ -71,7 +71,7 @@ def default_config() -> config_dict.ConfigDict:
                 # Stability terms
                 lin_vel_z=-0.5,
                 ang_vel_xy=-0.05,
-                orientation=-5.0,
+                orientation=-10.0,
                 dof_pos_limits=-1.0,
                 pose=0.5,
                 termination=-1.0,
@@ -86,7 +86,7 @@ def default_config() -> config_dict.ConfigDict:
                 feet_slip=-0.1,
                 feet_air_time=0.1,
             ),
-            tracking_sigma=0.25,
+            tracking_sigma=0.1,
             max_foot_height=0.1,
         ),
         pert_config=config_dict.create(
@@ -290,7 +290,7 @@ class Joystick(go2_base.Go2Env):
 
         rewards = self._get_reward(data, action, state.info, state.metrics, done, first_contact, contact)
         rewards = {key: value * self._config.reward_config.scales[key] for key, value in rewards.items()}
-        reward = jp.clip(sum(rewards.values()) * self.dt, 0.0, 10000.0)
+        reward = jp.clip(sum(rewards.values()) * self.dt, -100.0, 10000.0)
 
         state.info["last_last_act"] = state.info["last_act"]
         state.info["last_act"] = action
