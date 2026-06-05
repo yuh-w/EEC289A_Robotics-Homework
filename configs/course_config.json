@@ -17,14 +17,14 @@
   },
   "course_budget": {
     "baseline_total_env_steps": 15000000,
-    "leaderboard_max_env_steps": 100000000,
+    "leaderboard_max_env_steps": 60000000,
     "flat_terrain_only": true,
     "require_colab_gpu_runtime": true
   },
   "training_defaults": {
     "num_envs": 2048,
     "num_eval_envs": 256,
-    "num_evals": 8,
+    "num_evals": 6,
     "batch_size": 512,
     "policy_hidden_layer_sizes": [
       512,
@@ -39,7 +39,7 @@
   },
   "stage_1": {
     "name": "stage_1",
-    "num_timesteps": 20000000,
+    "num_timesteps": 12000000,
     "command_range": {
       "min": [
         0.0,
@@ -47,7 +47,7 @@
         0.0
       ],
       "max": [
-        1.6,
+        1.2,
         0.0,
         0.0
       ]
@@ -57,16 +57,17 @@
       0.0,
       0.0
     ],
-    "tracking_sigma": 0.35,
+    "tracking_sigma": 0.25,
     "reward_scales": {
-      "action_rate": -0.012,
-      "energy": -0.001,
-      "termination": -20.0
+      "tracking_lin_vel": 1.5,
+      "action_rate": -0.015,
+      "energy": -0.0012,
+      "termination": -8.0
     }
   },
   "stage_2": {
     "name": "stage_2",
-    "num_timesteps": 80000000,
+    "num_timesteps": 40000000,
     "command_range": {
       "min": [
         0.0,
@@ -74,7 +75,7 @@
         -0.6
       ],
       "max": [
-        4.8,
+        3.2,
         0.25,
         0.6
       ]
@@ -92,7 +93,7 @@
           -0.6
         ],
         "max": [
-          4.8,
+          3.2,
           0.25,
           0.6
         ]
@@ -105,26 +106,26 @@
       "track_sampler": {
         "enable": true,
         "mode_probs": [
-          0.45,
-          0.45,
-          0.1
+          0.50,
+          0.35,
+          0.15
         ],
         "straight_vx": [
-          1.4,
-          4.8
+          0.6,
+          3.2
         ],
         "straight_yaw": [
           -0.05,
           0.05
         ],
         "curve_vx": [
-          1.2,
-          3.0
+          0.8,
+          2.5
         ],
         "curve_radius": 18.25,
         "curve_yaw_noise": [
-          -0.04,
-          0.08
+          -0.03,
+          0.06
         ],
         "curve_yaw_scale": [
           0.85,
@@ -132,15 +133,15 @@
         ],
         "curve_yaw_abs": [
           0.05,
-          0.32
+          0.24
         ],
         "curve_vy": [
           -0.06,
           0.06
         ],
         "recovery_vx": [
-          0.2,
-          1.6
+          0.0,
+          1.4
         ],
         "recovery_vy": [
           -0.25,
@@ -152,17 +153,20 @@
         ]
       }
     },
-    "tracking_sigma": 0.8,
+    "tracking_sigma": 0.45,
     "reward_scales": {
-      "action_rate": -0.012,
-      "energy": -0.0008,
-      "torques": -0.00012,
-      "feet_slip": -0.22,
-      "feet_clearance": -1.0,
-      "feet_height": -0.1,
-      "orientation": -12.0,
-      "lin_vel_z": -0.8,
-      "termination": -30.0
+      "tracking_lin_vel": 2.0,
+      "tracking_ang_vel": 0.6,
+      "pose": 0.35,
+      "action_rate": -0.015,
+      "energy": -0.001,
+      "torques": -0.00015,
+      "feet_slip": -0.18,
+      "feet_clearance": -1.5,
+      "feet_height": -0.15,
+      "orientation": -10.0,
+      "lin_vel_z": -0.6,
+      "termination": -12.0
     },
     "perturbation": {
       "enable": true,
@@ -184,12 +188,12 @@
   "demo_rollout": {
     "segment_seconds": 6.0,
     "segments": [
-      [1.0, 0.0, 0.0],
-      [2.2, 0.0, 0.0],
-      [3.4, 0.0, 0.0],
-      [2.2, 0.0, 0.12],
-      [2.5, 0.0, 0.14],
-      [1.6, 0.05, -0.10]
+      [0.6, 0.0, 0.0],
+      [1.2, 0.0, 0.0],
+      [2.0, 0.0, 0.0],
+      [2.8, 0.0, 0.0],
+      [1.8, 0.0, 0.10],
+      [2.2, 0.03, -0.12]
     ]
   },
   "public_eval": {
@@ -197,15 +201,15 @@
     "safe_command_ranges": {
       "vx": [
         0.8,
-        4.0
+        3.0
       ],
       "vy": [
         -0.08,
         0.08
       ],
       "yaw": [
-        -0.35,
-        0.35
+        -0.28,
+        0.28
       ],
       "turn_radius": 18.25
     },
