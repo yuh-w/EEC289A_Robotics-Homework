@@ -47,7 +47,7 @@
         0.0
       ],
       "max": [
-        0.8,
+        1.2,
         0.0,
         0.0
       ]
@@ -57,9 +57,10 @@
       0.0,
       0.0
     ],
+    "tracking_sigma": 0.18,
     "reward_scales": {
-      "action_rate": -0.02,
-      "energy": -0.0015
+      "action_rate": -0.015,
+      "energy": -0.0012
     }
   },
   "stage_2": {
@@ -68,42 +69,100 @@
     "command_range": {
       "min": [
         0.0,
-        0.0,
-        0.0
+        -0.25,
+        -0.6
       ],
       "max": [
-        1.0,
-        0.0,
-        0.0
+        3.4,
+        0.25,
+        0.6
       ]
     },
     "command_keep_prob": [
       1.0,
-      0.0,
-      0.0
+      0.4,
+      0.7
     ],
     "student_stage2_goal": {
       "command_range": {
         "min": [
-          -0.6,
-          -0.2,
+          0.0,
+          -0.25,
           -0.6
         ],
         "max": [
-          0.6,
-          0.2,
+          3.4,
+          0.25,
           0.6
         ]
       },
       "command_keep_prob": [
         1.0,
-        0.5,
-        0.5
-      ]
+        0.4,
+        0.7
+      ],
+      "track_sampler": {
+        "enable": true,
+        "mode_probs": [
+          0.5,
+          0.4,
+          0.1
+        ],
+        "straight_vx": [
+          1.6,
+          3.4
+        ],
+        "straight_yaw": [
+          -0.05,
+          0.05
+        ],
+        "curve_vx": [
+          1.4,
+          2.6
+        ],
+        "curve_yaw_abs": [
+          0.12,
+          0.6
+        ],
+        "curve_vy": [
+          -0.1,
+          0.1
+        ],
+        "recovery_vx": [
+          0.2,
+          1.4
+        ],
+        "recovery_vy": [
+          -0.25,
+          0.25
+        ],
+        "recovery_yaw": [
+          -0.6,
+          0.6
+        ]
+      }
     },
+    "tracking_sigma": 0.25,
     "reward_scales": {
       "action_rate": -0.015,
-      "energy": -0.001
+      "energy": -0.001,
+      "torques": -0.00015,
+      "feet_slip": -0.15
+    },
+    "perturbation": {
+      "enable": true,
+      "velocity_kick": [
+        0.0,
+        1.2
+      ],
+      "kick_durations": [
+        0.05,
+        0.12
+      ],
+      "kick_wait_times": [
+        2.0,
+        5.0
+      ]
     },
     "restore_previous_stage_checkpoint": true
   },
@@ -205,6 +264,6 @@
       128
     ],
     "stage_1_num_timesteps": 10000000,
-    "stage_2_num_timesteps": 30000000
+    "stage_2_num_timesteps": 20000000
   }
 }

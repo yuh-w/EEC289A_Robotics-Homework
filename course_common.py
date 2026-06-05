@@ -165,8 +165,25 @@ def apply_stage_config(env_cfg: Any, ppo_cfg: Any, config: dict[str, Any], stage
         env_cfg.command_config.student_stage2_goal_min = list(stage_cfg["student_stage2_goal"]["command_range"]["min"])
         env_cfg.command_config.student_stage2_goal_max = list(stage_cfg["student_stage2_goal"]["command_range"]["max"])
         env_cfg.command_config.student_stage2_goal_b = list(stage_cfg["student_stage2_goal"]["command_keep_prob"])
-    env_cfg.reward_config.scales.action_rate = float(stage_cfg["reward_scales"]["action_rate"])
-    env_cfg.reward_config.scales.energy = float(stage_cfg["reward_scales"]["energy"])
+        track_sampler = stage_cfg["student_stage2_goal"].get("track_sampler", {})
+        for key, value in track_sampler.items():
+            setattr(env_cfg.command_config, f"stage2_track_{key}", value)
+
+    for reward_name, reward_value in stage_cfg["reward_scales"].items():
+        if reward_name in env_cfg.reward_config.scales:
+            env_cfg.reward_config.scales[reward_name] = float(reward_value)
+
+    if "tracking_sigma" in stage_cfg:
+        env_cfg.reward_config.tracking_sigma = float(stage_cfg["tracking_sigma"])
+    if "perturbation" in stage_cfg:
+        pert_cfg = stage_cfg["perturbation"]
+        env_cfg.pert_config.enable = bool(pert_cfg.get("enable", env_cfg.pert_config.enable))
+        if "velocity_kick" in pert_cfg:
+            env_cfg.pert_config.velocity_kick = list(pert_cfg["velocity_kick"])
+        if "kick_durations" in pert_cfg:
+            env_cfg.pert_config.kick_durations = list(pert_cfg["kick_durations"])
+        if "kick_wait_times" in pert_cfg:
+            env_cfg.pert_config.kick_wait_times = list(pert_cfg["kick_wait_times"])
 
     stage_steps_key = f"{stage_name}_num_timesteps"
     ppo_cfg.num_timesteps = int(runtime_overrides.get(stage_steps_key, stage_cfg["num_timesteps"]))

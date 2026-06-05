@@ -106,6 +106,16 @@ def default_config() -> config_dict.ConfigDict:
             student_stage2_goal_min=[-1.0, -0.4, -1.0],
             student_stage2_goal_max=[1.0, 0.4, 1.0],
             student_stage2_goal_b=[0.9, 0.25, 0.5],
+            stage2_track_enable=False,
+            stage2_track_mode_probs=[0.45, 0.45, 0.10],
+            stage2_track_straight_vx=[1.4, 3.2],
+            stage2_track_straight_yaw=[-0.08, 0.08],
+            stage2_track_curve_vx=[1.2, 2.5],
+            stage2_track_curve_yaw_abs=[0.15, 0.60],
+            stage2_track_curve_vy=[-0.08, 0.08],
+            stage2_track_recovery_vx=[0.0, 1.2],
+            stage2_track_recovery_vy=[-0.25, 0.25],
+            stage2_track_recovery_yaw=[-0.60, 0.60],
         ),
         impl="jax",
         naconmax=4 * 8192,
@@ -241,7 +251,10 @@ class Joystick(go2_base.Go2Env):
         rng, key1, key2 = jax.random.split(rng, 3)
         time_until_next_cmd = jax.random.exponential(key1) * 5.0
         steps_until_next_cmd = jp.round(time_until_next_cmd / self.dt).astype(jp.int32)
-        command = jax.random.uniform(key2, shape=(3,), minval=self._cmd_min, maxval=self._cmd_max)
+        if self._stage2_track_sampler_enabled():
+            command = self._sample_stage2_track_command(key2)
+        else:
+            command = jax.random.uniform(key2, shape=(3,), minval=self._cmd_min, maxval=self._cmd_max)
 
         info = {
             "rng": rng,
@@ -558,8 +571,48 @@ class Joystick(go2_base.Go2Env):
             self._student_stage2_goal_max, 
             self._student_stage2_goal_b
         )
-        
+
+    def _stage2_track_sampler_enabled(self) -> bool:
+        return self._command_stage_name == "stage_2" and bool(self._config.command_config.stage2_track_enable)
+
+    def _uniform_range(self, rng: jax.Array, value_range: list[float]) -> jax.Array:
+        bounds = jp.array(value_range)
+        return jax.random.uniform(rng, minval=bounds[0], maxval=bounds[1])
+
+    def _sample_stage2_track_command(self, rng: jax.Array) -> jax.Array:
+        """Sample command modes that match the high-level oval-track controller."""
+        mode_probs = jp.array(self._config.command_config.stage2_track_mode_probs)
+        logits = jp.log(mode_probs / jp.sum(mode_probs))
+        rng, mode_rng = jax.random.split(rng)
+        mode = jax.random.categorical(mode_rng, logits)
+
+        def straight(inner_rng: jax.Array) -> jax.Array:
+            vx_rng, yaw_rng = jax.random.split(inner_rng)
+            vx = self._uniform_range(vx_rng, self._config.command_config.stage2_track_straight_vx)
+            yaw = self._uniform_range(yaw_rng, self._config.command_config.stage2_track_straight_yaw)
+            return jp.array([vx, 0.0, yaw])
+
+        def curve(inner_rng: jax.Array) -> jax.Array:
+            vx_rng, vy_rng, yaw_rng, sign_rng = jax.random.split(inner_rng, 4)
+            vx = self._uniform_range(vx_rng, self._config.command_config.stage2_track_curve_vx)
+            vy = self._uniform_range(vy_rng, self._config.command_config.stage2_track_curve_vy)
+            yaw_abs = self._uniform_range(yaw_rng, self._config.command_config.stage2_track_curve_yaw_abs)
+            yaw_sign = jp.where(jax.random.bernoulli(sign_rng), 1.0, -1.0)
+            return jp.array([vx, vy, yaw_sign * yaw_abs])
+
+        def recovery(inner_rng: jax.Array) -> jax.Array:
+            vx_rng, vy_rng, yaw_rng = jax.random.split(inner_rng, 3)
+            vx = self._uniform_range(vx_rng, self._config.command_config.stage2_track_recovery_vx)
+            vy = self._uniform_range(vy_rng, self._config.command_config.stage2_track_recovery_vy)
+            yaw = self._uniform_range(yaw_rng, self._config.command_config.stage2_track_recovery_yaw)
+            return jp.array([vx, vy, yaw])
+
+        return jax.lax.switch(mode, [straight, curve, recovery], rng)
+
     def sample_command(self, rng: jax.Array, current_command: jax.Array) -> jax.Array:
+        if self._stage2_track_sampler_enabled():
+            return self._sample_stage2_track_command(rng)
+
         rng, y_rng, w_rng, z_rng = jax.random.split(rng, 4)
         cmd_min, cmd_max, cmd_keep_prob = self._command_sampling_profile(current_command)
         candidate = jax.random.uniform(y_rng, shape=(3,), minval=cmd_min, maxval=cmd_max)
