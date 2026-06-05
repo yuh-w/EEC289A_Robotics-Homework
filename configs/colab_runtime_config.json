@@ -17,29 +17,29 @@
   },
   "course_budget": {
     "baseline_total_env_steps": 15000000,
-    "leaderboard_max_env_steps": 30000000,
+    "leaderboard_max_env_steps": 100000000,
     "flat_terrain_only": true,
     "require_colab_gpu_runtime": true
   },
   "training_defaults": {
-    "num_envs": 1024,
-    "num_eval_envs": 128,
-    "num_evals": 5,
-    "batch_size": 256,
+    "num_envs": 2048,
+    "num_eval_envs": 256,
+    "num_evals": 8,
+    "batch_size": 512,
     "policy_hidden_layer_sizes": [
-      256,
+      512,
       256,
       128
     ],
     "value_hidden_layer_sizes": [
-      256,
-      256,
-      128
+      512,
+      512,
+      256
     ]
   },
   "stage_1": {
     "name": "stage_1",
-    "num_timesteps": 10000000,
+    "num_timesteps": 20000000,
     "command_range": {
       "min": [
         0.0,
@@ -47,7 +47,7 @@
         0.0
       ],
       "max": [
-        1.2,
+        1.6,
         0.0,
         0.0
       ]
@@ -57,15 +57,16 @@
       0.0,
       0.0
     ],
-    "tracking_sigma": 0.18,
+    "tracking_sigma": 0.35,
     "reward_scales": {
-      "action_rate": -0.015,
-      "energy": -0.0012
+      "action_rate": -0.012,
+      "energy": -0.001,
+      "termination": -20.0
     }
   },
   "stage_2": {
     "name": "stage_2",
-    "num_timesteps": 20000000,
+    "num_timesteps": 80000000,
     "command_range": {
       "min": [
         0.0,
@@ -73,7 +74,7 @@
         -0.6
       ],
       "max": [
-        3.4,
+        4.8,
         0.25,
         0.6
       ]
@@ -91,7 +92,7 @@
           -0.6
         ],
         "max": [
-          3.4,
+          4.8,
           0.25,
           0.6
         ]
@@ -104,33 +105,42 @@
       "track_sampler": {
         "enable": true,
         "mode_probs": [
-          0.5,
-          0.4,
+          0.45,
+          0.45,
           0.1
         ],
         "straight_vx": [
-          1.6,
-          3.4
+          1.4,
+          4.8
         ],
         "straight_yaw": [
           -0.05,
           0.05
         ],
         "curve_vx": [
-          1.4,
-          2.6
+          1.2,
+          3.0
+        ],
+        "curve_radius": 18.25,
+        "curve_yaw_noise": [
+          -0.04,
+          0.08
+        ],
+        "curve_yaw_scale": [
+          0.85,
+          1.25
         ],
         "curve_yaw_abs": [
-          0.12,
-          0.6
+          0.05,
+          0.32
         ],
         "curve_vy": [
-          -0.1,
-          0.1
+          -0.06,
+          0.06
         ],
         "recovery_vx": [
           0.2,
-          1.4
+          1.6
         ],
         "recovery_vy": [
           -0.25,
@@ -142,12 +152,17 @@
         ]
       }
     },
-    "tracking_sigma": 0.25,
+    "tracking_sigma": 0.8,
     "reward_scales": {
-      "action_rate": -0.015,
-      "energy": -0.001,
-      "torques": -0.00015,
-      "feet_slip": -0.15
+      "action_rate": -0.012,
+      "energy": -0.0008,
+      "torques": -0.00012,
+      "feet_slip": -0.22,
+      "feet_clearance": -1.0,
+      "feet_height": -0.1,
+      "orientation": -12.0,
+      "lin_vel_z": -0.8,
+      "termination": -30.0
     },
     "perturbation": {
       "enable": true,
@@ -166,32 +181,33 @@
     },
     "restore_previous_stage_checkpoint": true
   },
-    "demo_rollout": {
-    "segment_seconds": 5.0, 
+  "demo_rollout": {
+    "segment_seconds": 6.0,
     "segments": [
-      [0.8, 0.0, 0.0],  
-      [-0.6, 0.0, 0.0], 
-      [0.0, 0.3, 0.0],  
-      [0.0, -0.3, 0.0], 
-      [0.0, 0.0, 0.8],  
-      [0.8, 0.3, 0.6]   
+      [1.0, 0.0, 0.0],
+      [2.2, 0.0, 0.0],
+      [3.4, 0.0, 0.0],
+      [2.2, 0.0, 0.12],
+      [2.5, 0.0, 0.14],
+      [1.6, 0.05, -0.10]
     ]
   },
   "public_eval": {
     "episode_length_seconds": 30.0,
     "safe_command_ranges": {
       "vx": [
-        -0.6,
-        0.6
+        0.8,
+        4.0
       ],
       "vy": [
-        -0.2,
-        0.2
+        -0.08,
+        0.08
       ],
       "yaw": [
-        -0.6,
-        0.6
-      ]
+        -0.35,
+        0.35
+      ],
+      "turn_radius": 18.25
     },
     "metrics": {
       "velocity_tracking_error": {
@@ -249,21 +265,21 @@
     ]
   },
   "runtime_overrides": {
-    "num_envs": 1024,
-    "num_eval_envs": 128,
-    "num_evals": 5,
-    "batch_size": 256,
+    "num_envs": 2048,
+    "num_eval_envs": 256,
+    "num_evals": 8,
+    "batch_size": 512,
     "policy_hidden_layer_sizes": [
-      256,
+      512,
       256,
       128
     ],
     "value_hidden_layer_sizes": [
-      256,
-      256,
-      128
+      512,
+      512,
+      256
     ],
-    "stage_1_num_timesteps": 10000000,
-    "stage_2_num_timesteps": 20000000
+    "stage_1_num_timesteps": 20000000,
+    "stage_2_num_timesteps": 80000000
   }
 }

@@ -9,10 +9,10 @@ import numpy as np
 
 
 PUBLIC_EPISODE_LABELS = (
-    "forward_only",
-    "lateral_only",
-    "yaw_only",
-    "combined",
+    "straight_ramp",
+    "left_oval_curve",
+    "right_oval_curve",
+    "curve_recovery",
 )
 
 
@@ -37,34 +37,43 @@ def build_demo_segments(config: dict[str, Any]) -> list[list[float]]:
 
 def public_command_script(safe_ranges: dict[str, list[float]], episode_idx: int) -> list[list[float]]:
     """Return the deterministic command schedule for one public benchmark episode."""
-    _, vx_max = map(float, safe_ranges["vx"])
-    _, vy_max = map(float, safe_ranges["vy"])
-    _, yaw_max = map(float, safe_ranges["yaw"])
+    vx_min, vx_max = map(float, safe_ranges["vx"])
+    vy_min, vy_max = map(float, safe_ranges["vy"])
+    yaw_min, yaw_max = map(float, safe_ranges["yaw"])
+    turn_radius = float(safe_ranges.get("turn_radius", 18.25))
+
+    def oval_yaw(vx: float, sign: float = 1.0) -> float:
+        yaw = float(np.clip(vx / turn_radius, 0.0, yaw_max))
+        return float(np.clip(sign * yaw, yaw_min, yaw_max))
+
+    slow = max(vx_min, 0.8)
+    medium = min(vx_max, 2.4)
+    curve_fast = min(vx_max, 3.0)
 
     scripts = [
         [
             [0.0, 0.0, 0.0],
-            [0.35 * vx_max, 0.0, 0.0],
-            [0.60 * vx_max, 0.0, 0.0],
-            [0.0, 0.0, 0.0],
+            [slow, 0.0, 0.0],
+            [0.70 * vx_max, 0.0, 0.0],
+            [vx_max, 0.0, 0.0],
         ],
         [
-            [0.0, 0.0, 0.0],
-            [0.0, 0.40 * vy_max, 0.0],
-            [0.0, 0.70 * vy_max, 0.0],
-            [0.0, 0.0, 0.0],
+            [slow, 0.0, oval_yaw(slow)],
+            [medium, 0.0, oval_yaw(medium)],
+            [curve_fast, 0.0, oval_yaw(curve_fast)],
+            [slow, 0.0, 0.0],
         ],
         [
-            [0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.40 * yaw_max],
-            [0.0, 0.0, 0.70 * yaw_max],
-            [0.0, 0.0, 0.0],
+            [slow, 0.0, oval_yaw(slow, -1.0)],
+            [medium, 0.0, oval_yaw(medium, -1.0)],
+            [curve_fast, 0.0, oval_yaw(curve_fast, -1.0)],
+            [slow, 0.0, 0.0],
         ],
         [
-            [0.0, 0.0, 0.0],
-            [0.35 * vx_max, 0.35 * vy_max, 0.25 * yaw_max],
-            [0.60 * vx_max, 0.50 * vy_max, 0.40 * yaw_max],
-            [0.0, 0.0, 0.0],
+            [1.4, 0.0, 0.0],
+            [1.6, vy_max, oval_yaw(1.6)],
+            [1.2, vy_min, oval_yaw(1.2, -1.0)],
+            [2.0, 0.0, oval_yaw(2.0)],
         ],
     ]
     return scripts[episode_idx % len(scripts)]

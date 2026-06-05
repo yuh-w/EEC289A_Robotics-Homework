@@ -111,7 +111,10 @@ def default_config() -> config_dict.ConfigDict:
             stage2_track_straight_vx=[1.4, 3.2],
             stage2_track_straight_yaw=[-0.08, 0.08],
             stage2_track_curve_vx=[1.2, 2.5],
-            stage2_track_curve_yaw_abs=[0.15, 0.60],
+            stage2_track_curve_radius=18.25,
+            stage2_track_curve_yaw_noise=[-0.04, 0.08],
+            stage2_track_curve_yaw_scale=[0.85, 1.25],
+            stage2_track_curve_yaw_abs=[0.06, 0.35],
             stage2_track_curve_vy=[-0.08, 0.08],
             stage2_track_recovery_vx=[0.0, 1.2],
             stage2_track_recovery_vy=[-0.25, 0.25],
@@ -593,10 +596,14 @@ class Joystick(go2_base.Go2Env):
             return jp.array([vx, 0.0, yaw])
 
         def curve(inner_rng: jax.Array) -> jax.Array:
-            vx_rng, vy_rng, yaw_rng, sign_rng = jax.random.split(inner_rng, 4)
+            vx_rng, vy_rng, yaw_noise_rng, yaw_scale_rng, sign_rng = jax.random.split(inner_rng, 5)
             vx = self._uniform_range(vx_rng, self._config.command_config.stage2_track_curve_vx)
             vy = self._uniform_range(vy_rng, self._config.command_config.stage2_track_curve_vy)
-            yaw_abs = self._uniform_range(yaw_rng, self._config.command_config.stage2_track_curve_yaw_abs)
+            yaw_noise = self._uniform_range(yaw_noise_rng, self._config.command_config.stage2_track_curve_yaw_noise)
+            yaw_scale = self._uniform_range(yaw_scale_rng, self._config.command_config.stage2_track_curve_yaw_scale)
+            yaw_limits = jp.array(self._config.command_config.stage2_track_curve_yaw_abs)
+            radius = self._config.command_config.stage2_track_curve_radius
+            yaw_abs = jp.clip(vx / radius * yaw_scale + yaw_noise, yaw_limits[0], yaw_limits[1])
             yaw_sign = jp.where(jax.random.bernoulli(sign_rng), 1.0, -1.0)
             return jp.array([vx, vy, yaw_sign * yaw_abs])
 
