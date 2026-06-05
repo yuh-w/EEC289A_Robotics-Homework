@@ -35,8 +35,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True, help="Directory for the rollout bundle.")
     parser.add_argument(
         "--stage-name",
-        choices=["stage_1", "stage_2"],
-        default="stage_2",
+        choices=["stage_1", "stage_2", "stage_3"],
+        default="stage_3",
         help="Which stage config to use when building the eval environment.",
     )
     parser.add_argument("--num-episodes", type=int, default=4, help="Number of public benchmark episodes to run.")

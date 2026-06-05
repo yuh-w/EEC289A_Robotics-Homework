@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--stage",
-        choices=["stage_1", "stage_2", "both"],
+        choices=["stage_1", "stage_2", "stage_3", "both", "all"],
         default="both",
         help="Which training stage to run.",
     )
@@ -77,6 +77,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--episode-length", type=int, default=None, help="Override the episode length.")
     parser.add_argument("--stage1-steps", type=int, default=None, help="Override stage 1 target environment steps.")
     parser.add_argument("--stage2-steps", type=int, default=None, help="Override stage 2 target environment steps.")
+    parser.add_argument("--stage3-steps", type=int, default=None, help="Override stage 3 target environment steps.")
     parser.add_argument(
         "--policy-hidden-layer-sizes",
         type=int,
@@ -129,6 +130,7 @@ def build_runtime_overrides(args: argparse.Namespace) -> dict[str, Any]:
                 "num_updates_per_batch": 2,
                 "stage_1_num_timesteps": 4096,
                 "stage_2_num_timesteps": 2048,
+                "stage_3_num_timesteps": 2048,
             }
         )
 
@@ -148,6 +150,8 @@ def build_runtime_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["stage_1_num_timesteps"] = args.stage1_steps
     if args.stage2_steps is not None:
         overrides["stage_2_num_timesteps"] = args.stage2_steps
+    if args.stage3_steps is not None:
+        overrides["stage_3_num_timesteps"] = args.stage3_steps
     if args.policy_hidden_layer_sizes is not None:
         overrides["policy_hidden_layer_sizes"] = list(args.policy_hidden_layer_sizes)
     if args.value_hidden_layer_sizes is not None:
@@ -340,12 +344,13 @@ def main() -> None:
 
     selected_stages = stage_sequence(args.stage)
 
-    if selected_stages == ["stage_2"]:
-        restore_required = config["stage_2"].get("restore_previous_stage_checkpoint", False)
+    if len(selected_stages) == 1 and selected_stages[0] != "stage_1":
+        stage_name = selected_stages[0]
+        restore_required = config[stage_name].get("restore_previous_stage_checkpoint", False)
         if restore_required and args.restore_checkpoint_dir is None:
             raise SystemExit(
-                "stage_2 is configured as a finetuning stage. "
-                "Run '--stage both' or pass --restore-checkpoint-dir."
+                f"{stage_name} is configured as a finetuning stage. "
+                "Run '--stage both', '--stage all', or pass --restore-checkpoint-dir."
             )
 
     force_cpu = bool(config.get("force_cpu")) or bool(config.get("runtime_overrides", {}).get("force_cpu"))
@@ -377,19 +382,22 @@ def main() -> None:
     stage_summaries = []
 
     for stage_name in selected_stages:
-        if stage_name == "stage_2" and config["stage_2"].get("restore_previous_stage_checkpoint", False):
+        if stage_name != "stage_1" and config[stage_name].get("restore_previous_stage_checkpoint", False):
+            previous_stage_name = f"stage_{int(stage_name.rsplit('_', 1)[1]) - 1}"
             if restore_checkpoint_path is None:
-                stage_1_summary_path = output_dir / "stage_1" / "summary.json"
-                if stage_1_summary_path.exists():
-                    stage_1_summary = load_json(stage_1_summary_path)
-                    selected_source = stage_1_summary.get("selected_checkpoint_source")
+                previous_summary_path = output_dir / previous_stage_name / "summary.json"
+                if previous_summary_path.exists():
+                    previous_summary = load_json(previous_summary_path)
+                    selected_source = previous_summary.get("selected_checkpoint_source")
                     if selected_source:
                         restore_checkpoint_path = Path(selected_source)
             if restore_checkpoint_path is None:
-                stage_1_checkpoint_root = output_dir / "stage_1" / "checkpoints"
-                restore_checkpoint_path = resolve_latest_checkpoint_dir(stage_1_checkpoint_root)
+                previous_checkpoint_root = output_dir / previous_stage_name / "checkpoints"
+                restore_checkpoint_path = resolve_latest_checkpoint_dir(previous_checkpoint_root)
             if restore_checkpoint_path is None:
-                raise RuntimeError("stage_2 requested finetuning, but no stage_1 checkpoint was found.")
+                raise RuntimeError(
+                    f"{stage_name} requested finetuning, but no {previous_stage_name} checkpoint was found."
+                )
 
         summary = run_stage(
             stack=stack,

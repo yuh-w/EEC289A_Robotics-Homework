@@ -68,6 +68,8 @@ def default_config() -> config_dict.ConfigDict:
                 # Task terms
                 tracking_lin_vel=1.0,
                 tracking_ang_vel=0.5,
+                tracking_forward_vel=0.0,
+                forward_progress=0.0,
                 # Stability terms
                 lin_vel_z=-0.5,
                 ang_vel_xy=-0.05,
@@ -420,6 +422,8 @@ class Joystick(go2_base.Go2Env):
         return {
             "tracking_lin_vel": self._reward_tracking_lin_vel(info["command"], self.get_local_linvel(data)),
             "tracking_ang_vel": self._reward_tracking_ang_vel(info["command"], self.get_gyro(data)),
+            "tracking_forward_vel": self._reward_tracking_forward_vel(info["command"], self.get_local_linvel(data)),
+            "forward_progress": self._reward_forward_progress(info["command"], self.get_local_linvel(data)),
             "lin_vel_z": self._cost_lin_vel_z(self.get_global_linvel(data)),
             "ang_vel_xy": self._cost_ang_vel_xy(self.get_global_angvel(data)),
             "orientation": self._cost_orientation(self.get_upvector(data)),
@@ -445,6 +449,15 @@ class Joystick(go2_base.Go2Env):
     def _reward_tracking_ang_vel(self, commands: jax.Array, ang_vel: jax.Array) -> jax.Array:
         ang_vel_error = jp.square(commands[2] - ang_vel[2])
         return jp.exp(-ang_vel_error / self._config.reward_config.tracking_sigma)
+
+    def _reward_tracking_forward_vel(self, commands: jax.Array, local_vel: jax.Array) -> jax.Array:
+        forward_error = jp.square(commands[0] - local_vel[0])
+        return jp.exp(-forward_error / self._config.reward_config.tracking_sigma) * (commands[0] > 0.05)
+
+    def _reward_forward_progress(self, commands: jax.Array, local_vel: jax.Array) -> jax.Array:
+        target_vx = jp.maximum(commands[0], 0.1)
+        bounded_vx = jp.clip(local_vel[0], 0.0, target_vx)
+        return bounded_vx / target_vx * (commands[0] > 0.05)
 
     # --- Stability costs ---------------------------------------------------
 
@@ -576,7 +589,9 @@ class Joystick(go2_base.Go2Env):
         )
 
     def _stage2_track_sampler_enabled(self) -> bool:
-        return self._command_stage_name == "stage_2" and bool(self._config.command_config.stage2_track_enable)
+        return self._command_stage_name in ("stage_2", "stage_3") and bool(
+            self._config.command_config.stage2_track_enable
+        )
 
     def _uniform_range(self, rng: jax.Array, value_range: list[float]) -> jax.Array:
         bounds = jp.array(value_range)

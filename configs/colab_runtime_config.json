@@ -17,7 +17,7 @@
   },
   "course_budget": {
     "baseline_total_env_steps": 15000000,
-    "leaderboard_max_env_steps": 60000000,
+    "leaderboard_max_env_steps": 120000000,
     "flat_terrain_only": true,
     "require_colab_gpu_runtime": true
   },
@@ -185,6 +185,109 @@
     },
     "restore_previous_stage_checkpoint": true
   },
+  "stage_3": {
+    "name": "stage_3",
+    "num_timesteps": 60000000,
+    "command_range": {
+      "min": [
+        0.0,
+        -0.18,
+        -0.45
+      ],
+      "max": [
+        4.2,
+        0.18,
+        0.45
+      ]
+    },
+    "command_keep_prob": [
+      1.0,
+      0.25,
+      0.6
+    ],
+    "track_sampler": {
+      "enable": true,
+      "mode_probs": [
+        0.55,
+        0.35,
+        0.10
+      ],
+      "straight_vx": [
+        1.0,
+        4.2
+      ],
+      "straight_yaw": [
+        -0.04,
+        0.04
+      ],
+      "curve_vx": [
+        1.2,
+        2.8
+      ],
+      "curve_radius": 18.25,
+      "curve_yaw_noise": [
+        -0.025,
+        0.05
+      ],
+      "curve_yaw_scale": [
+        0.9,
+        1.2
+      ],
+      "curve_yaw_abs": [
+        0.05,
+        0.28
+      ],
+      "curve_vy": [
+        -0.05,
+        0.05
+      ],
+      "recovery_vx": [
+        0.2,
+        1.6
+      ],
+      "recovery_vy": [
+        -0.18,
+        0.18
+      ],
+      "recovery_yaw": [
+        -0.45,
+        0.45
+      ]
+    },
+    "tracking_sigma": 0.65,
+    "reward_scales": {
+      "tracking_lin_vel": 2.0,
+      "tracking_ang_vel": 0.55,
+      "tracking_forward_vel": 1.0,
+      "forward_progress": 0.35,
+      "pose": 0.25,
+      "action_rate": -0.012,
+      "energy": -0.0008,
+      "torques": -0.00012,
+      "feet_slip": -0.22,
+      "feet_clearance": -1.2,
+      "feet_height": -0.12,
+      "orientation": -11.0,
+      "lin_vel_z": -0.7,
+      "termination": -18.0
+    },
+    "perturbation": {
+      "enable": true,
+      "velocity_kick": [
+        0.0,
+        1.4
+      ],
+      "kick_durations": [
+        0.05,
+        0.12
+      ],
+      "kick_wait_times": [
+        2.0,
+        5.0
+      ]
+    },
+    "restore_previous_stage_checkpoint": true
+  },
   "demo_rollout": {
     "segment_seconds": 6.0,
     "segments": [
@@ -284,6 +387,7 @@
       256
     ],
     "stage_1_num_timesteps": 12000000,
-    "stage_2_num_timesteps": 40000000
+    "stage_2_num_timesteps": 40000000,
+    "stage_3_num_timesteps": 60000000
   }
 }

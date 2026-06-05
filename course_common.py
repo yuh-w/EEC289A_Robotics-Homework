@@ -168,6 +168,9 @@ def apply_stage_config(env_cfg: Any, ppo_cfg: Any, config: dict[str, Any], stage
         track_sampler = stage_cfg["student_stage2_goal"].get("track_sampler", {})
         for key, value in track_sampler.items():
             setattr(env_cfg.command_config, f"stage2_track_{key}", value)
+    if "track_sampler" in stage_cfg:
+        for key, value in stage_cfg["track_sampler"].items():
+            setattr(env_cfg.command_config, f"stage2_track_{key}", value)
 
     for reward_name, reward_value in stage_cfg["reward_scales"].items():
         if reward_name in env_cfg.reward_config.scales:
@@ -213,7 +216,11 @@ def apply_stage_config(env_cfg: Any, ppo_cfg: Any, config: dict[str, Any], stage
 
 
 def stage_sequence(stage_arg: str) -> list[str]:
-    return ["stage_1", "stage_2"] if stage_arg == "both" else [stage_arg]
+    if stage_arg == "both":
+        return ["stage_1", "stage_2"]
+    if stage_arg == "all":
+        return ["stage_1", "stage_2", "stage_3"]
+    return [stage_arg]
 
 
 def resolve_latest_checkpoint_dir(checkpoint_root: Path) -> Path | None:
